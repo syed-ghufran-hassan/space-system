@@ -1,5 +1,4 @@
 import React from "react";
-const BaseAppEmbed = React.lazy(() => import("./BaseAppEmbed"));
 import EmbededCast from "./EmbededCast";
 import OnchainEmbed from "./OnchainEmbed";
 import TweetEmbed from "./TweetEmbed";
@@ -11,6 +10,9 @@ import SmartFrameEmbed from "./SmartFrameEmbed";
 import ZoraEmbed from "./ZoraEmbed";
 import { isImageUrl, isVideoUrl } from "@/common/lib/utils/urls";
 import CreateCastImage from "./createCastImage";
+
+// Lazy-loaded components
+const BaseAppEmbed = React.lazy(() => import("./BaseAppEmbed"));
 
 export type CastEmbed = {
   url?: string;
@@ -31,7 +33,7 @@ export const renderEmbedForUrl = (
   if (!url) return null;
 
   // Custom embed for base.app
-  if (url.includes("base.app")) {
+  if (url.match(/^https?:\/\/([a-z0-9-]+\.)?base\.app\//i)) {
     return (
       <React.Suspense fallback={null}>
         <BaseAppEmbed url={url} key={key} />
