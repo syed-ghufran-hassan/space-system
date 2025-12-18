@@ -1,5 +1,7 @@
-import { JSDOM } from "jsdom";
 import { NextRequest, NextResponse } from "next/server";
+
+// Force Node.js runtime for better compatibility
+export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -67,18 +69,57 @@ export async function GET(request: NextRequest) {
     }
 
     const html = await response.text();
-    const dom = new JSDOM(html);
-    const document = dom.window.document;
-
-    // Extract OpenGraph metadata
+    
+    // Extract OpenGraph metadata using regex (more reliable in serverless environments)
     const getMetaContent = (property: string): string | null => {
-      const element = document.querySelector(`meta[property="${property}"], meta[name="${property}"]`);
-      return element?.getAttribute("content") || null;
+      // Escape special regex characters in property name
+      const escapedProperty = property.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // Match meta tags with property/name and content in any order, handling spaces and quotes
+      const patterns = [
+        // property="..." content="..." or property='...' content='...'
+        new RegExp(`<meta[^>]*(?:property|name)\\s*=\\s*["']${escapedProperty}["'][^>]*content\\s*=\\s*["']([^"']+)["']`, 'i'),
+        // content="..." property="..." or content='...' property='...'
+        new RegExp(`<meta[^>]*content\\s*=\\s*["']([^"']+)["'][^>]*(?:property|name)\\s*=\\s*["']${escapedProperty}["']`, 'i'),
+      ];
+      
+      for (const pattern of patterns) {
+        const match = html.match(pattern);
+        if (match && match[1]) {
+          // Decode HTML entities
+          let content = match[1].trim();
+          content = content.replace(/&amp;/g, '&');
+          content = content.replace(/&lt;/g, '<');
+          content = content.replace(/&gt;/g, '>');
+          content = content.replace(/&quot;/g, '"');
+          content = content.replace(/&#39;/g, "'");
+          content = content.replace(/&apos;/g, "'");
+          return content;
+        }
+      }
+      return null;
+    };
+
+    // Extract title tag
+    const getTitleTag = (): string | null => {
+      const titleRegex = /<title[^>]*>([^<]+)<\/title>/i;
+      const titleMatch = html.match(titleRegex);
+      if (titleMatch && titleMatch[1]) {
+        let content = titleMatch[1].trim();
+        // Decode HTML entities
+        content = content.replace(/&amp;/g, '&');
+        content = content.replace(/&lt;/g, '<');
+        content = content.replace(/&gt;/g, '>');
+        content = content.replace(/&quot;/g, '"');
+        content = content.replace(/&#39;/g, "'");
+        content = content.replace(/&apos;/g, "'");
+        return content;
+      }
+      return null;
     };
 
     const title = getMetaContent("og:title") || 
                   getMetaContent("twitter:title") || 
-                  document.querySelector("title")?.textContent || 
+                  getTitleTag() || 
                   null;
 
     const description = getMetaContent("og:description") || 
@@ -94,21 +135,52 @@ export async function GET(request: NextRequest) {
                 getMetaContent("twitter:player") || 
                 null;
 
+    // Convert relative URLs to absolute URLs
+    const makeAbsoluteUrl = (urlString: string | null): string | null => {
+      if (!urlString || !parsedUrl) return urlString;
+      try {
+        // If it's already absolute, return as is
+        if (urlString.startsWith('http://') || urlString.startsWith('https://')) {
+          return urlString;
+        }
+        // If it starts with //, add https:
+        if (urlString.startsWith('//')) {
+          return `https:${urlString}`;
+        }
+        // If it starts with /, make it relative to the origin
+        if (urlString.startsWith('/')) {
+          return `${parsedUrl.origin}${urlString}`;
+        }
+        // Otherwise, make it relative to the current URL
+        return new URL(urlString, url).toString();
+      } catch {
+        return urlString;
+      }
+    };
+
     // Filter out video URLs from image field (e.g., .m3u8, .mp4, etc.)
     if (image) {
-      const imageUrl = image.toLowerCase();
-      const videoExtensions = ['.m3u8', '.mp4', '.webm', '.mov', '.avi', '.mkv', '.flv'];
-      const isVideoUrl = videoExtensions.some(ext => imageUrl.includes(ext)) || 
-                         imageUrl.includes('/video/') ||
-                         imageUrl.includes('video/upload');
-      
-      if (isVideoUrl) {
-        // Move video URL from image to video field
-        if (!video) {
-          video = image;
+      image = makeAbsoluteUrl(image);
+      if (image) {
+        const imageUrl = image.toLowerCase();
+        const videoExtensions = ['.m3u8', '.mp4', '.webm', '.mov', '.avi', '.mkv', '.flv'];
+        const isVideoUrl = videoExtensions.some(ext => imageUrl.includes(ext)) || 
+                           imageUrl.includes('/video/') ||
+                           imageUrl.includes('video/upload');
+        
+        if (isVideoUrl) {
+          // Move video URL from image to video field
+          if (!video) {
+            video = image;
+          }
+          image = null;
         }
-        image = null;
       }
+    }
+
+    // Convert video URL to absolute if needed
+    if (video) {
+      video = makeAbsoluteUrl(video);
     }
 
     const siteName = getMetaContent("og:site_name") || 
@@ -122,8 +194,6 @@ export async function GET(request: NextRequest) {
       siteName,
       url,
     };
-
-    // ...existing code...
 
     return NextResponse.json(ogData);
   } catch (error) {
