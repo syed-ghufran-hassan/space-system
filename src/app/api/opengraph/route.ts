@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
 import { JSDOM } from "jsdom";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
         "Sec-Fetch-Mode": "navigate",
         "Sec-Fetch-Site": "cross-site",
       },
-      signal: AbortSignal.timeout(10000), // 10 second timeout
+      signal: AbortSignal.timeout(8000), // 8 second timeout - reduced to fail faster
     });
 
     if (!response.ok) {
@@ -86,9 +86,30 @@ export async function GET(request: NextRequest) {
                        getMetaContent("description") || 
                        null;
 
-    const image = getMetaContent("og:image") || 
-                  getMetaContent("twitter:image") || 
-                  null;
+    let image = getMetaContent("og:image") || 
+                getMetaContent("twitter:image") || 
+                null;
+
+    let video = getMetaContent("og:video") || 
+                getMetaContent("twitter:player") || 
+                null;
+
+    // Filter out video URLs from image field (e.g., .m3u8, .mp4, etc.)
+    if (image) {
+      const imageUrl = image.toLowerCase();
+      const videoExtensions = ['.m3u8', '.mp4', '.webm', '.mov', '.avi', '.mkv', '.flv'];
+      const isVideoUrl = videoExtensions.some(ext => imageUrl.includes(ext)) || 
+                         imageUrl.includes('/video/') ||
+                         imageUrl.includes('video/upload');
+      
+      if (isVideoUrl) {
+        // Move video URL from image to video field
+        if (!video) {
+          video = image;
+        }
+        image = null;
+      }
+    }
 
     const siteName = getMetaContent("og:site_name") || 
                      new URL(url).hostname;
@@ -97,6 +118,7 @@ export async function GET(request: NextRequest) {
       title,
       description,
       image,
+      video,
       siteName,
       url,
     };
@@ -105,14 +127,17 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(ogData);
   } catch (error) {
+    console.error("Error fetching OpenGraph data:", error);
     
     // Return minimal fallback data
     return NextResponse.json({
-      title: new URL(url).hostname,
+      title: parsedUrl?.hostname || url,
       description: null,
       image: null,
-      siteName: new URL(url).hostname,
+      video: null,
+      siteName: parsedUrl?.hostname || url,
       url,
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 }
