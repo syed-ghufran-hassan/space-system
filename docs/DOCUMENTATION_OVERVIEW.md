@@ -26,6 +26,8 @@ docs/
 │   │   └── OVERVIEW.md               # Fidget architecture
 │   ├── THEMES/                        # Theme system
 │   │   └── OVERVIEW.md               # Theme architecture
+│   ├── CONFIGURATION/                 # Configuration system
+│   │   └── ARCHITECTURE_OVERVIEW.md  # Database-backed configuration system
 │   └── DISCOVERY/                     # Discovery system
 │       └── MINI_APP_DISCOVERY_SYSTEM.md # Mini-app discovery system
 │
@@ -52,7 +54,6 @@ docs/
 - **README.md** - Main documentation hub with navigation
 - **GETTING_STARTED.md** - Setup and installation guide
 - **CONTRIBUTING.md** - Contributing guidelines
-- **WHITELABELING_SYSTEM.md** - Community customization and configuration system
 
 ### Architecture
 - **ARCHITECTURE/OVERVIEW.md** - High-level architecture with diagrams
@@ -67,6 +68,7 @@ docs/
 - **SYSTEMS/SPACES/LAYOUT_MIGRATION_GUIDE.md** - Layout migration guide
 - **SYSTEMS/FIDGETS/OVERVIEW.md** - Fidget system, types, development patterns
 - **SYSTEMS/THEMES/OVERVIEW.md** - Theme system, customization, CSS variables
+- **SYSTEMS/CONFIGURATION/ARCHITECTURE_OVERVIEW.md** - Database-backed configuration system
 - **SYSTEMS/DISCOVERY/MINI_APP_DISCOVERY_SYSTEM.md** - Mini-app discovery system
 
 ### Integrations
