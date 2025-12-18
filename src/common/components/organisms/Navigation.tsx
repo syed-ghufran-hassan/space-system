@@ -42,7 +42,8 @@ import {
 } from "../molecules/CastModalHelpers";
 import SearchModal, { SearchModalHandle } from "./SearchModal";
 import { toFarcasterCdnUrl } from "@/common/lib/utils/farcasterCdn";
-import { loadSystemConfig } from "@/config";
+import { SystemConfig } from "@/config";
+import { useUIColors } from "@/common/lib/hooks/useUIColors";
 
 type NavItemProps = {
   label: string;
@@ -58,17 +59,22 @@ type NavItemProps = {
 type NavButtonProps = Omit<NavItemProps, "href" | "openInNewTab">;
 
 type NavProps = {
+  systemConfig: SystemConfig;
   isEditable: boolean;
   enterEditMode?: () => void;
   mobile?: boolean;
   onNavigate?: () => void;
 };
 
-const NavIconBadge = ({ children }) => {
+const NavIconBadge: React.FC<{
+  children: React.ReactNode;
+  systemConfig: SystemConfig;
+}> = ({ children, systemConfig }) => {
+  const uiColors = useUIColors({ systemConfig });
   return (
     <Badge
-      variant="primary"
-      className="justify-center text-[11px]/[12px] min-w-[18px] min-h-[18px] font-medium shadow-md px-[3px] rounded-full absolute left-[19px] top-[4px]"
+      className="justify-center text-[11px]/[12px] min-w-[18px] min-h-[18px] font-medium shadow-md px-[3px] rounded-full absolute left-[19px] top-[4px] border-white text-white"
+      style={{ backgroundColor: uiColors.primaryColor }}
     >
       {children}
     </Badge>
@@ -77,6 +83,7 @@ const NavIconBadge = ({ children }) => {
 
 const Navigation = React.memo(
 ({
+  systemConfig,
   isEditable,
   enterEditMode,
   mobile = false,
@@ -95,8 +102,15 @@ const Navigation = React.memo(
   const logout = useLogout();
   const notificationBadgeText = useNotificationBadgeText();
   const pathname = usePathname();
-  const { community, navigation } = loadSystemConfig();
+  const { community, navigation, ui } = systemConfig;
   const discordUrl = community?.urls?.discord || "https://discord.gg/eYQeXU2WuH";
+  
+  // Get cast button colors from config, with fallback to blue
+  const castButtonColors = ui?.castButton || {
+    backgroundColor: "rgb(37, 99, 235)",
+    hoverColor: "rgb(29, 78, 216)",
+    activeColor: "rgb(30, 64, 175)",
+  };
 
   const [shrunk, setShrunk] = useState(mobile ? false : true);
 
@@ -294,7 +308,7 @@ const Navigation = React.memo(
           rel={openInNewTab ? "noopener noreferrer" : undefined}
           target={openInNewTab ? "_blank" : undefined}
         >
-          {badgeText && <NavIconBadge>{badgeText}</NavIconBadge>}
+          {badgeText && <NavIconBadge systemConfig={systemConfig}>{badgeText}</NavIconBadge>}
           <Icon />
           {!shrunk && <span className="ms-3 relative z-10">{label}</span>}
         </Link>
@@ -320,7 +334,7 @@ const Navigation = React.memo(
           )}
           onClick={onClick}
         >
-          {badgeText && <NavIconBadge>{badgeText}</NavIconBadge>}
+          {badgeText && <NavIconBadge systemConfig={systemConfig}>{badgeText}</NavIconBadge>}
           <Icon aria-hidden="true" />
           {!shrunk && <span className="ms-3 relative z-10">{label}</span>}
         </button>
@@ -402,7 +416,7 @@ const Navigation = React.memo(
           )}
 
           <div className="-mt-6 pb-6">
-            <BrandHeader />
+            <BrandHeader systemConfig={systemConfig} />
           </div>
           <div
             className={mergeClasses(
@@ -469,14 +483,16 @@ const Navigation = React.memo(
             </div>
           </div>
           <div className="flex flex-col flex-auto justify-between border-t px-4">
-            <div
-              className={mergeClasses("mt-8 px-2", shrunk ? "px-0" : "px-2")}
-            >
-              <Player
-                url={userTheme?.properties?.musicURL || NOUNISH_LOWFI_URL}
-                shrunk={shrunk}
-              />
-            </div>
+            {navigation?.showMusicPlayer !== false && (
+              <div
+                className={mergeClasses("mt-8 px-2", shrunk ? "px-0" : "px-2")}
+              >
+                <Player
+                  url={userTheme?.properties?.musicURL || NOUNISH_LOWFI_URL}
+                  shrunk={shrunk}
+                />
+              </div>
+            )}
             {isLoggedIn && (
               <div
                 className={mergeClasses(
@@ -486,9 +502,24 @@ const Navigation = React.memo(
               >
                 <Button
                   onClick={openCastModal}
-                  variant="primary"
+                  id="open-cast-modal-button"
                   width="auto"
-                  className="flex items-center justify-center w-12 h-12"
+                  className="flex items-center justify-center w-12 h-12 text-white font-medium rounded-md transition-colors"
+                  style={{
+                    backgroundColor: castButtonColors.backgroundColor,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = castButtonColors.hoverColor;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = castButtonColors.backgroundColor;
+                  }}
+                  onMouseDown={(e) => {
+                    e.currentTarget.style.backgroundColor = castButtonColors.activeColor;
+                  }}
+                  onMouseUp={(e) => {
+                    e.currentTarget.style.backgroundColor = castButtonColors.hoverColor;
+                  }}
                 >
                   {shrunk ? <span className="sr-only">Cast</span> : "Cast"}
                   {shrunk && (
@@ -501,18 +532,20 @@ const Navigation = React.memo(
             )}
             {!isLoggedIn && (
               <div className="flex flex-col items-center gap-2">
-                <Link
-                href={discordUrl}
-                  className={mergeClasses(
-                    "flex items-center p-2 text-gray-900 rounded-lg dark:text-white group w-full gap-2 text-lg font-medium",
-                    shrunk ? "justify-center gap-0" : ""
-                  )}
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  <FaDiscord className="text-[#5865f2] w-6 h-6" />
-                  {!shrunk && "Join"}
-                </Link>
+                {navigation?.showSocials !== false && (
+                  <Link
+                    href={discordUrl}
+                    className={mergeClasses(
+                      "flex items-center p-2 text-gray-900 rounded-lg dark:text-white group w-full gap-2 text-lg font-medium",
+                      shrunk ? "justify-center gap-0" : ""
+                    )}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    <FaDiscord className="text-[#5865f2] w-6 h-6" />
+                    {!shrunk && "Join"}
+                  </Link>
+                )}
                 <div
                   className="flex flex-col items-center text-xs text-gray-500 mt-5"
                 >
