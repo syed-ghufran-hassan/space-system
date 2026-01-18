@@ -17,7 +17,7 @@
  * 
  * Requires:
  *   - NEXT_PUBLIC_SUPABASE_URL
- *   - SUPABASE_SERVICE_ROLE_KEY
+ *   - SUPABASE_SERVICE_KEY
  *   - NEXT_PUBLIC_IMGBB_API_KEY (optional, only needed for uploading assets)
  * 
  * This script consolidates:
@@ -27,6 +27,21 @@
  *   - scripts/check-seeding.ts (integrated)
  */
 
+// Load environment variables from .env file
+import dotenv from 'dotenv';
+import { existsSync } from 'fs';
+import { resolve } from 'path';
+
+// Try to load .env files in order of priority
+const envFiles = ['.env.local', '.env.development.local', '.env'];
+for (const envFile of envFiles) {
+  const envPath = resolve(process.cwd(), envFile);
+  if (existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+    console.log(`📁 Loaded environment from ${envFile}`);
+    break;
+  }
+}
 import { createClient } from '@supabase/supabase-js';
 import { readFile } from 'fs/promises';
 import { join, dirname } from 'path';
@@ -45,13 +60,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 const imgBBApiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('❌ Missing required environment variables:');
   console.error('   NEXT_PUBLIC_SUPABASE_URL');
-  console.error('   SUPABASE_SERVICE_ROLE_KEY');
+  console.error('   SUPABASE_SERVICE_KEY');
   process.exit(1);
 }
 
@@ -243,15 +258,17 @@ async function seedCommunityConfigs(assetsUrls: Record<string, string>) {
   }
 
   // Nouns config
+  // Note: Add identityPublicKey values to admin_identity_public_keys to allow users to edit nav pages
+  // You can find a user's identityPublicKey in the browser devtools: 
+  // localStorage.getItem('nounspace-app-store') -> account.currentSpaceIdentityPublicKey
   const { error: nounsError } = await supabase
     .from('community_configs')
     .upsert({
-      community_id: 'nouns',
+      community_id: 'nounspace.com',
       is_published: true,
+      admin_identity_public_keys: [], // Add admin identityPublicKey values here
       brand_config: {
-        name: 'Nouns',
         displayName: 'Nouns',
-        tagline: 'A space for Nouns',
         description: 'The social hub for Nouns',
         miniAppTags: ['nouns', 'client', 'customizable', 'social', 'link'],
       },
@@ -362,6 +379,10 @@ async function seedCommunityConfigs(assetsUrls: Record<string, string>) {
         primaryColor: 'rgb(37, 99, 235)',
         primaryHoverColor: 'rgb(29, 78, 216)',
         primaryActiveColor: 'rgb(30, 64, 175)',
+        fontColor: 'rgb(15, 23, 42)',
+        castButtonFontColor: '#ffffff',
+        url: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+        backgroundColor: 'rgb(255, 255, 255)',
         castButton: {
           backgroundColor: 'rgb(37, 99, 235)',
           hoverColor: 'rgb(29, 78, 216)',
@@ -380,6 +401,7 @@ async function seedCommunityConfigs(assetsUrls: Record<string, string>) {
   const { error: exampleError } = await supabase.from('community_configs').upsert({
     community_id: 'example',
     is_published: true,
+    admin_identity_public_keys: [],
     brand_config: {
       name: 'Example',
       displayName: 'Example Community',
@@ -466,6 +488,10 @@ async function seedCommunityConfigs(assetsUrls: Record<string, string>) {
       primaryColor: 'rgb(37, 99, 235)',
       primaryHoverColor: 'rgb(29, 78, 216)',
       primaryActiveColor: 'rgb(30, 64, 175)',
+      fontColor: 'rgb(15, 23, 42)',
+      castButtonFontColor: '#ffffff',
+      url: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+      backgroundColor: 'rgb(255, 255, 255)',
       castButton: {
         backgroundColor: 'rgb(37, 99, 235)',
         hoverColor: 'rgb(29, 78, 216)',
@@ -490,12 +516,11 @@ async function seedCommunityConfigs(assetsUrls: Record<string, string>) {
 
   // Clanker config
   const { error: clankerError } = await supabase.from('community_configs').upsert({
-    community_id: 'clanker',
+    community_id: 'clanker.space',
     is_published: true,
+    admin_identity_public_keys: [],
     brand_config: {
-      name: 'clanker',
       displayName: 'Clanker',
-      tagline: 'Clank Clank',
       description:
         'Explore, launch and trade tokens in the Clanker ecosystem. Create your own tokens and discover trending projects in the community-driven token economy.',
     },
@@ -600,6 +625,10 @@ async function seedCommunityConfigs(assetsUrls: Record<string, string>) {
       primaryColor: 'rgba(136, 131, 252, 1)',
       primaryHoverColor: 'rgba(116, 111, 232, 1)',
       primaryActiveColor: 'rgba(96, 91, 212, 1)',
+      fontColor: 'rgb(15, 23, 42)',
+      castButtonFontColor: '#ffffff',
+      url: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+      backgroundColor: 'rgb(255, 255, 255)',
       castButton: {
         backgroundColor: 'rgba(136, 131, 252, 1)',
         hoverColor: 'rgba(116, 111, 232, 1)',
@@ -630,17 +659,16 @@ function createSystemSignedFile(fileData: string): SignedFile {
 }
 
 /**
- * Creates a SignedFile for tab order
+ * Creates tab order data in the format expected by the app
+ * NOTE: Tab order is NOT wrapped in a SignedFile like tabs are.
+ * The app saves tab order directly as a signed request object.
  */
-function createTabOrderSignedFile(spaceId: string, tabOrder: string[]): SignedFile {
-  const tabOrderData = {
+function createTabOrderData(spaceId: string, tabOrder: string[]) {
+  return {
     spaceId,
     timestamp: moment().toISOString(),
     tabOrder,
-    publicKey: 'nounspace',
-    signature: 'not applicable, machine generated file',
   };
-  return createSystemSignedFile(stringify(tabOrderData));
 }
 
 /**
@@ -667,14 +695,16 @@ async function uploadTab(spaceId: string, tabName: string, tabConfig: SpaceConfi
 
 /**
  * Uploads tab order to Supabase Storage
+/**
+ * NOTE: Tab order is saved directly (not wrapped in SignedFile) to match app format
  */
 async function uploadTabOrder(spaceId: string, tabOrder: string[]): Promise<boolean> {
-  const signedFile = createTabOrderSignedFile(spaceId, tabOrder);
+  const tabOrderData = createTabOrderData(spaceId, tabOrder);
   const filePath = `${spaceId}/tabOrder`;
 
   const { error } = await supabase.storage
     .from('spaces')
-    .upload(filePath, new Blob([stringify(signedFile)], { type: 'application/json' }), {
+    .upload(filePath, new Blob([stringify(tabOrderData)], { type: 'application/json' }), {
       upsert: true,
     });
 
@@ -825,7 +855,7 @@ async function checkSeeding(): Promise<boolean> {
   // Test the RPC function
   console.log('\n🧪 Testing get_active_community_config function...');
   const { data: testConfig, error: testError } = await supabase
-    .rpc('get_active_community_config', { p_community_id: 'nouns' })
+    .rpc('get_active_community_config', { p_community_id: 'nounspace.com' })
     .single();
 
   if (testError) {
