@@ -39,15 +39,18 @@ const cspHeader = `
       https://auth.privy.io
       https://auth.privy.io/api/v1/apps/clw9qpfkl01nnpox6rcsb5wy3
       https://auth.privy.io/api/v1/analytics_events
+<<<<<<< HEAD
       https://cdn.segment.com
       https://api.segment.io
       https://edge.fullstory.com
       https://rs.fullstory.com
+=======
       https://cdn.mxpnl.com
       https://api-js.mixpanel.com
       https://api.mixpanel.com
       https://decide.mixpanel.com
       https://replay.mixpanel.com
+>>>>>>> origin/canary
       https://api.imgbb.com
       https://api.goldsky.com
       https://api.reservoir.tools

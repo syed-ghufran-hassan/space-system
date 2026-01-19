@@ -38,7 +38,6 @@ Nounspace is a highly customizable Farcaster client funded by Nouns DAO. This do
 
 ### Navigation
 - [Navigation System](SYSTEMS/NAVIGATION/OVERVIEW.md) - Navigation editor and management
-
 - [Customization](SYSTEMS/THEMES/CUSTOMIZATION.md) - Theme customization
 
 ### Configuration

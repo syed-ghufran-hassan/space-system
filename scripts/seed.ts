@@ -42,6 +42,7 @@ for (const envFile of envFiles) {
     break;
   }
 }
+
 import { createClient } from '@supabase/supabase-js';
 import { readFile } from 'fs/promises';
 import { join, dirname } from 'path';
@@ -278,20 +279,11 @@ async function seedCommunityConfigs(assetsUrls: Record<string, string>) {
         urls: {
           website: 'https://nouns.com',
           discord: 'https://discord.gg/nouns',
-          twitter: 'https://twitter.com/nounsdao',
-          github: 'https://github.com/nounsDAO',
-          forum: 'https://discourse.nouns.wtf',
         },
         social: {
           farcaster: 'nouns',
-          discord: 'nouns',
-          twitter: 'nounsdao',
         },
-        governance: {
-          proposals: 'https://nouns.wtf/vote',
-          delegates: 'https://nouns.wtf/delegates',
-          treasury: 'https://nouns.wtf/treasury',
-        },
+        governance: {},
         tokens: {
           erc20Tokens: [
             {
@@ -309,12 +301,6 @@ async function seedCommunityConfigs(assetsUrls: Record<string, string>) {
               network: 'eth',
             },
           ],
-        },
-        contracts: {
-          nouns: '0x9c8ff314c9bc7f6e59a9d9225fb22946427edc03',
-          auctionHouse: '0x830bd73e4184cef73443c15111a1df14e495c706',
-          space: '0x48C6740BcF807d6C47C864FaEEA15Ed4dA3910Ab',
-          nogs: '0xD094D5D45c06c1581f5f429462eE7cCe72215616',
         },
       },
       fidgets_config: {
@@ -403,9 +389,7 @@ async function seedCommunityConfigs(assetsUrls: Record<string, string>) {
     is_published: true,
     admin_identity_public_keys: [],
     brand_config: {
-      name: 'Example',
       displayName: 'Example Community',
-      tagline: 'A space for Example Community',
       description: 'The social hub for Example Community',
       miniAppTags: [],
     },
@@ -424,20 +408,11 @@ async function seedCommunityConfigs(assetsUrls: Record<string, string>) {
       urls: {
         website: 'https://example.com',
         discord: 'https://discord.gg/example',
-        twitter: 'https://twitter.com/example',
-        github: 'https://github.com/example',
-        forum: 'https://forum.example.com',
       },
       social: {
         farcaster: 'example',
-        discord: 'example',
-        twitter: 'example',
       },
-      governance: {
-        proposals: 'https://governance.example.com/proposals',
-        delegates: 'https://governance.example.com/delegates',
-        treasury: 'https://governance.example.com/treasury',
-      },
+      governance: {},
       tokens: {
         erc20Tokens: [
           {
@@ -454,14 +429,8 @@ async function seedCommunityConfigs(assetsUrls: Record<string, string>) {
             type: 'erc721',
             network: 'eth',
           },
-        ],
-      },
-      contracts: {
-        nouns: '0x1234567890123456789012345678901234567890',
-        auctionHouse: '0x1234567890123456789012345678901234567890',
-        space: '0x1234567890123456789012345678901234567890',
-        nogs: '0x1234567890123456789012345678901234567890',
-      },
+          ],
+        },
     },
     fidgets_config: {
       enabled: [
@@ -539,20 +508,11 @@ async function seedCommunityConfigs(assetsUrls: Record<string, string>) {
       urls: {
         website: 'https://clanker.world',
         discord: 'https://discord.gg/clanker',
-        twitter: 'https://twitter.com/clankerworld',
-        github: 'https://github.com/clanker',
-        forum: 'https://forum.clanker.world',
       },
       social: {
         farcaster: 'clanker',
-        discord: 'clanker',
-        twitter: 'clankerworld',
       },
-      governance: {
-        proposals: 'https://proposals.clanker.world',
-        delegates: 'https://delegates.clanker.world',
-        treasury: 'https://treasury.clanker.world',
-      },
+      governance: {},
       tokens: {
         erc20Tokens: [
           {
@@ -562,17 +522,8 @@ async function seedCommunityConfigs(assetsUrls: Record<string, string>) {
             network: 'base',
           },
         ],
-        nftTokens: [],
-      },
-      contracts: {
-        clanker: '0x1bc0c42215582d5a085795f4badbac3ff36d1bcb',
-        tokenFactory: '0x0000000000000000000000000000000000000000',
-        space: '0x0000000000000000000000000000000000000000',
-        trading: '0x0000000000000000000000000000000000000000',
-        nouns: '0x0000000000000000000000000000000000000000',
-        auctionHouse: '0x0000000000000000000000000000000000000000',
-        nogs: '0x0000000000000000000000000000000000000000',
-      },
+        nftTokens: [          ],
+        },
     },
     fidgets_config: {
       enabled: [
@@ -695,7 +646,6 @@ async function uploadTab(spaceId: string, tabName: string, tabConfig: SpaceConfi
 
 /**
  * Uploads tab order to Supabase Storage
-/**
  * NOTE: Tab order is saved directly (not wrapped in SignedFile) to match app format
  */
 async function uploadTabOrder(spaceId: string, tabOrder: string[]): Promise<boolean> {
@@ -933,4 +883,3 @@ async function main() {
 }
 
 main();
-

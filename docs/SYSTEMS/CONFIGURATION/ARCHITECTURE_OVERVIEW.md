@@ -191,7 +191,7 @@ interface SystemConfig {
   navigation?: NavigationConfig; // From database (with spaceId refs)
   ui?: UIConfig;                // From database
   adminIdentityPublicKeys?: string[]; // From database (admin public keys)
-  communityId: string;                // Database community_id (added for API operations)
+  communityId: string;          // Database community_id (added for API operations)
 }
 ```
 
@@ -199,15 +199,15 @@ interface SystemConfig {
 
 | Component | Storage Location | Notes |
 |-----------|-----------------|-------|
-| **Brand Config**      | Database (`brand_config`)               | Display name, description, mini-app tags |
-| **Assets Config**     | Database (`assets_config`)              | Logo paths, favicon, OG images |
-| **Community Config**  | Database (`community_config`)           | URLs, social handles, governance identifiers, tokens |
-| **Fidgets Config**    | Database (`fidgets_config`)             | Enabled/disabled fidget IDs |
-| **Navigation Config** | Database (`navigation_config`)          | Navigation items with `spaceId` refs |
-| **UI Config**         | Database (`ui_config`)                  | Primary colors, hover states, font colors, font URL |
-| **Themes**            | `src/config/shared/themes.ts`           | Shared across all communities |
-| **Navigation Pages**  | Supabase Storage (`spaces` bucket`)     | Stored as Spaces, referenced by `spaceId` |
-| **Community ID**      | SystemConfig (runtime)                  | Database `community_id` passed through for API operations |
+| **Brand Config** | Database (`brand_config`) | Display name, description, mini-app tags |
+| **Assets Config** | Database (`assets_config`) | Logo paths, favicon, OG images |
+| **Community Config** | Database (`community_config`) | URLs, social handles, governance identifiers, tokens |
+| **Fidgets Config** | Database (`fidgets_config`) | Enabled/disabled fidget IDs |
+| **Navigation Config** | Database (`navigation_config`) | Navigation items with `spaceId` refs |
+| **UI Config** | Database (`ui_config`) | Primary colors, hover states, font colors, font URL |
+| **Themes** | `src/config/shared/themes.ts` | Shared across all communities |
+| **Navigation Pages** | Supabase Storage (`spaces` bucket) | Stored as Spaces, referenced by `spaceId` |
+| **Community ID** | SystemConfig (runtime) | Database `community_id` passed through for API operations |
 
 **Note:** The `communityId` field in `SystemConfig` is the database `community_id` (e.g., "nounspace.com", "nouns") used for API operations. This is different from `community.type` which is a semantic descriptor (e.g., "nouns", "token_platform") stored in the `community_config` JSONB field.
 
@@ -469,7 +469,7 @@ RootLayout (Server Component)
 
 - `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anon key (for runtime loading)
-- `SUPABASE_SERVICE_ROLE_KEY` - Service role key (for seeding/admin operations)
+- `SUPABASE_SERVICE_KEY` - Service role key (for seeding/admin operations)
 
 ### Optional
 
@@ -544,7 +544,6 @@ RootLayout (Server Component)
 ## Future Considerations
 
 1. **Versioning**: Database function supports multiple versions (orders by `updated_at`)
-2. **Caching**: Could add caching layer for frequently accessed configs
-3. **Admin UI**: Navigation editor provides admin interface for navigation config updates (see [Navigation System](../NAVIGATION/OVERVIEW.md))
-4. **Validation**: Could add JSON schema validation for configs
-5. **Rollback**: Could add version history and rollback capabilities
+2. **Admin UI**: Navigation editor provides admin interface for navigation config updates (see [Navigation System](../NAVIGATION/OVERVIEW.md))
+3. **Validation**: Could add JSON schema validation for configs
+4. **Rollback**: Could add version history and rollback capabilities
